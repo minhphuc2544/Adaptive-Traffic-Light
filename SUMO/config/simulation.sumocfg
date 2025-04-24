@@ -1,0 +1,10 @@
+<configuration>
+    <input>
+        <net-file value="../network/simple.net.xml"/>
+        <route-files value="../routes/random_routes.rou.xml"/>
+    </input>
+    <time>
+        <begin value="0"/>
+        <end value="1000"/>
+    </time>
+</configuration>
