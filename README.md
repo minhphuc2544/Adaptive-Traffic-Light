@@ -31,9 +31,12 @@ cd ./SUMO/scripts
 python -u generate_vehicle.py
 ```
 2. **AI model**
-
+#### AI model to decide traffic light signal
 Train the Model and Export Weights
 ```bash
 cd model
 python model.py
 ```
+
+### AI model to detect and count number of vehicles
+Import a traffic video and copy the video path into model.py and run
