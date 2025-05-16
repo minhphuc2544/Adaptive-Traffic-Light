@@ -179,3 +179,9 @@ simple.net.xml
 # AI model files
 weights.npy
 tempCodeRunnerFile.py
+
+# Picture and video
+*.jpg
+*.png
+*.jpeg
+*.mp4
