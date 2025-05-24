@@ -3,5 +3,6 @@
     <vType id="motorbike" guiShape="motorcycle" color="0,0,1" accel="3.0" decel="2.0" sigma="1" length="2.0" maxSpeed="50"/>
     <vType id="bicycle" guiShape="bicycle" color="0,1,0" accel="1.5" decel="1.0" maxSpeed="25" length="1.5"/>
     <vType id="bus" guiShape="bus" color="1,1,0" accel="3.5" decel="2.5" sigma="1" length="12.0" maxSpeed="60"/>
+    <vType id="truck" guiShape="truck" color "1,1,1" accel="3" decel="2.5" sigma="1" length="10.0" maxSpeed="60"/> 
     <route id="route0" edges="edge1"/>
 </routes>

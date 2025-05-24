@@ -7,7 +7,7 @@ import paho.mqtt.client as mqtt
 import json
 
 # --- MQTT Config ---
-MQTT_BROKER = '172.30.203.90'
+MQTT_BROKER = '192.168.61.8'
 MQTT_PORT = 1883
 MQTT_TOPIC = 'iot/traffic'
 client = mqtt.Client()
@@ -15,9 +15,9 @@ client.on_connect = lambda client, userdata, flags, rc: on_connect(client, userd
 client.on_message = lambda client, userdata, msg: on_message(client, userdata, msg)
 
 # --- SUMO Config ---
-NUM_VEHICLES_MAX = 100
+NUM_VEHICLES_MAX = 10000
 ROUTES = ["route0"]
-VEHICLE_TYPES = ["car", "motorbike", "bicycle", "bus"]
+VEHICLE_TYPES = ["car", "motorbike", "bicycle", "bus","truck"]
 
 # --- Global variables ---
 veh_index = 0

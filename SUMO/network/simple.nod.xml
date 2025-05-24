@@ -1,4 +1,30 @@
-<nodes>
+<!-- <nodes>
     <node id="1" x="0" y="0" type="priority"/>
     <node id="2" x="500" y="0" type="priority"/>
-</nodes>
+</nodes> -->
+
+
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2024-05-21 10:18:13 by Eclipse SUMO netedit Version 1.20.0
+-->
+
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+    <!-- Routes -->
+    <route id="W_E" edges="W2TL TL2E"/>
+    <route id="W_S" edges="W2TL TL2S"/>
+    <route id="N_W" edges="N2TL TL2W"/>
+    <route id="N_S" edges="N2TL TL2S"/>
+    <route id="E_W" edges="E2TL TL2W"/>
+    <route id="E_N" edges="E2TL TL2N"/>
+    <route id="S_N" edges="S2TL TL2N"/>
+    <route id="S_E" edges="S2TL TL2E"/>
+    <!-- Vehicles, persons and containers (sorted by depart)
+    <vehicle id="n-w-0" type="car" depart="0.00" route="N_W"/>
+    <vehicle id="1" type="car" depart="0.00" route="E_W"/>
+    <vehicle id="2" type="car" depart="0.00" route="W_E"/>
+    <vehicle id="3" type="car" depart="0.00" route="S_N"/> -->
+
+    <!-- flow -->
+    <!-- <flow id="carflow" type="car" begin="0.00" from="E2TL" to="TL2N" end="0.00" number="10"/> -->
+</routes>
