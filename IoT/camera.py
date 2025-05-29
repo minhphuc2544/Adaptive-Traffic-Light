@@ -1,213 +1,173 @@
 #!/usr/bin/env python3
 """
-Raspberry Pi Camera RTSP Streamer
-Captures video from Pi Camera V2 and streams via RTSP using FFmpeg
-Run this on your Raspberry Pi 3
+Raspberry Pi Camera Streamer
+Captures video from Pi Camera V2 and streams via MJPEG over HTTP
+
+Setup Instructions:
+1. Enable camera: sudo raspi-config → Interface Options → Camera → Enable
+2. Reboot: sudo reboot
+3. Install dependencies: pip3 install opencv-python
+4. Run: python3 camera.py
+
+Hardware: Raspberry Pi 3 + Pi Camera V2
+Streaming: MJPEG over HTTP (low latency, Pi 3 compatible)
 """
 
-import subprocess
-import time
-import signal
-import sys
-from picamera2 import Picamera2
+import cv2
 import threading
-import logging
+import time
+from http.server import BaseHTTPRequestHandler, HTTPServer
+import socketserver
+from io import BytesIO
 
 # --- Configuration ---
-RTSP_PORT = 8554
-STREAM_NAME = "stream"
-RESOLUTION = (1280, 720)  # 720p for good balance of quality/bandwidth
-FRAMERATE = 15  # Lower framerate for Pi 3 performance
-BITRATE = "2M"  # 2 Mbps bitrate
-GOP_SIZE = 30  # Keyframe interval
+CAMERA_WIDTH = 640
+CAMERA_HEIGHT = 480
+CAMERA_FPS = 15  # Lower FPS for Pi 3 performance
+HTTP_PORT = 8080
+JPEG_QUALITY = 80  # Balance between quality and bandwidth
 
-# Setup logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
-
-class RTSPStreamer:
+class CameraStreamer:
     def __init__(self):
-        self.camera = None
-        self.ffmpeg_process = None
-        self.running = False
+        # Initialize Pi Camera via OpenCV
+        # Note: On Pi, cv2.VideoCapture(0) uses Pi camera if enabled
+        self.cap = cv2.VideoCapture(0)
         
-    def setup_camera(self):
-        """Initialize and configure the Pi Camera"""
-        try:
-            self.camera = Picamera2()
-            
-            # Configure camera for streaming
-            config = self.camera.create_video_configuration(
-                main={"size": RESOLUTION, "format": "RGB888"},
-                controls={"FrameRate": FRAMERATE}
-            )
-            self.camera.configure(config)
-            
-            logger.info(f"✅ Camera configured: {RESOLUTION[0]}x{RESOLUTION[1]} @ {FRAMERATE}fps")
-            return True
-            
-        except Exception as e:
-            logger.error(f"❌ Camera setup failed: {e}")
-            return False
-    
-    def start_ffmpeg_rtsp_server(self):
-        """Start FFmpeg RTSP server process"""
-        try:
-            # FFmpeg command to create RTSP server
-            ffmpeg_cmd = [
-                'ffmpeg',
-                '-f', 'rawvideo',
-                '-pix_fmt', 'rgb24',
-                '-s', f'{RESOLUTION[0]}x{RESOLUTION[1]}',
-                '-r', str(FRAMERATE),
-                '-i', '-',  # Read from stdin (pipe)
-                '-c:v', 'libx264',
-                '-preset', 'ultrafast',  # Fast encoding for Pi 3
-                '-tune', 'zerolatency',  # Low latency
-                '-b:v', BITRATE,
-                '-g', str(GOP_SIZE),
-                '-keyint_min', str(GOP_SIZE),
-                '-sc_threshold', '0',
-                '-f', 'rtsp',
-                f'rtsp://0.0.0.0:{RTSP_PORT}/{STREAM_NAME}'
-            ]
-            
-            self.ffmpeg_process = subprocess.Popen(
-                ffmpeg_cmd,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            )
-            
-            logger.info(f"🎥 RTSP server started on port {RTSP_PORT}")
-            return True
-            
-        except Exception as e:
-            logger.error(f"❌ FFmpeg RTSP server failed: {e}")
-            return False
-    
-    def stream_frames(self):
-        """Capture and stream frames to FFmpeg"""
-        try:
-            self.camera.start()
-            logger.info("📹 Camera streaming started")
-            
-            frame_count = 0
-            start_time = time.time()
-            
-            while self.running:
-                # Capture frame
-                frame = self.camera.capture_array()
-                
-                # Send frame to FFmpeg via pipe
-                try:
-                    self.ffmpeg_process.stdin.write(frame.tobytes())
-                    self.ffmpeg_process.stdin.flush()
-                    
-                    frame_count += 1
-                    
-                    # Log stats every 100 frames
-                    if frame_count % 100 == 0:
-                        elapsed = time.time() - start_time
-                        actual_fps = frame_count / elapsed
-                        logger.info(f"📊 Streamed {frame_count} frames, FPS: {actual_fps:.1f}")
-                        
-                except BrokenPipeError:
-                    logger.error("❌ FFmpeg pipe broken")
-                    break
-                    
-                # Small delay to prevent overwhelming the Pi
-                time.sleep(1.0 / FRAMERATE)
-                
-        except Exception as e:
-            logger.error(f"❌ Streaming error: {e}")
-        finally:
-            if self.camera:
-                self.camera.stop()
-    
-    def start(self):
-        """Start the RTSP streaming service"""
-        logger.info("🚀 Starting RTSP Camera Streamer...")
+        if not self.cap.isOpened():
+            raise Exception("❌ Cannot open Pi Camera! Check connection and enable via raspi-config")
         
-        # Setup camera
-        if not self.setup_camera():
-            return False
-            
-        # Start FFmpeg RTSP server
-        if not self.start_ffmpeg_rtsp_server():
-            return False
-            
-        # Get local IP for display
-        try:
-            import socket
-            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            s.connect(("8.8.8.8", 80))
-            local_ip = s.getsockname()[0]
-            s.close()
-            
-            logger.info(f"🌐 RTSP Stream URL: rtsp://{local_ip}:{RTSP_PORT}/{STREAM_NAME}")
-            logger.info(f"🔗 Connect your YOLO detector to: rtsp://{local_ip}:{RTSP_PORT}/{STREAM_NAME}")
-            
-        except Exception:
-            logger.info(f"🌐 RTSP Stream URL: rtsp://<YOUR_PI_IP>:{RTSP_PORT}/{STREAM_NAME}")
+        # Configure camera settings
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, CAMERA_WIDTH)
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, CAMERA_HEIGHT)
+        self.cap.set(cv2.CAP_PROP_FPS, CAMERA_FPS)
         
-        # Start streaming
+        print(f"✅ Pi Camera initialized: {CAMERA_WIDTH}x{CAMERA_HEIGHT} @ {CAMERA_FPS}fps")
+        
+        # Latest frame storage (thread-safe)
+        self.frame = None
+        self.frame_lock = threading.Lock()
         self.running = True
-        try:
-            self.stream_frames()
-        except KeyboardInterrupt:
-            logger.info("⏹️  Streaming stopped by user")
-        finally:
-            self.stop()
-            
-        return True
+        
+        # Start camera capture thread
+        self.capture_thread = threading.Thread(target=self._capture_frames)
+        self.capture_thread.daemon = True
+        self.capture_thread.start()
+    
+    def _capture_frames(self):
+        """Continuous frame capture in separate thread"""
+        while self.running:
+            ret, frame = self.cap.read()
+            if ret:
+                with self.frame_lock:
+                    self.frame = frame
+            else:
+                print("⚠️ Failed to capture frame")
+                time.sleep(0.1)
+    
+    def get_latest_frame(self):
+        """Get the most recent frame (thread-safe)"""
+        with self.frame_lock:
+            return self.frame.copy() if self.frame is not None else None
     
     def stop(self):
-        """Stop streaming and cleanup"""
-        logger.info("🛑 Stopping RTSP streamer...")
+        """Clean shutdown"""
         self.running = False
-        
-        if self.camera:
-            try:
-                self.camera.stop()
-                self.camera.close()
-                logger.info("📷 Camera stopped")
-            except Exception as e:
-                logger.error(f"Camera stop error: {e}")
-        
-        if self.ffmpeg_process:
-            try:
-                self.ffmpeg_process.stdin.close()
-                self.ffmpeg_process.terminate()
-                self.ffmpeg_process.wait(timeout=5)
-                logger.info("🎬 FFmpeg process terminated")
-            except Exception as e:
-                logger.error(f"FFmpeg stop error: {e}")
-                self.ffmpeg_process.kill()
+        self.cap.release()
+        print("📹 Camera stopped")
 
-def signal_handler(signum, frame):
-    """Handle Ctrl+C gracefully"""
-    logger.info("🛑 Received interrupt signal")
-    sys.exit(0)
-
-def main():
-    # Setup signal handler
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
+class StreamingHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        if self.path == '/stream':
+            # MJPEG stream endpoint
+            self.send_response(200)
+            self.send_header('Content-Type', 'multipart/x-mixed-replace; boundary=--jpgboundary')
+            self.send_header('Cache-Control', 'no-cache')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            
+            try:
+                while True:
+                    frame = camera.get_latest_frame()
+                    if frame is not None:
+                        # Encode frame as JPEG
+                        encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), JPEG_QUALITY]
+                        _, buffer = cv2.imencode('.jpg', frame, encode_param)
+                        
+                        # Send MJPEG frame
+                        self.wfile.write(b'--jpgboundary\r\n')
+                        self.send_header('Content-Type', 'image/jpeg')
+                        self.send_header('Content-Length', len(buffer))
+                        self.end_headers()
+                        self.wfile.write(buffer)
+                        self.wfile.write(b'\r\n')
+                    
+                    time.sleep(1.0 / CAMERA_FPS)  # Control stream rate
+                    
+            except Exception as e:
+                print(f"⚠️ Client disconnected: {e}")
+        
+        elif self.path == '/':
+            # Simple web page to view stream
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/html')
+            self.end_headers()
+            html = f"""
+            <html>
+            <head><title>Pi Camera Stream</title></head>
+            <body>
+                <h1>Raspberry Pi Camera Stream</h1>
+                <img src="/stream" width="{CAMERA_WIDTH}" height="{CAMERA_HEIGHT}">
+                <p>Stream URL: http://{{your_pi_ip}}:{HTTP_PORT}/stream</p>
+            </body>
+            </html>
+            """
+            self.wfile.write(html.encode())
+        else:
+            self.send_error(404)
     
-    # Check dependencies
+    def log_message(self, format, *args):
+        # Suppress HTTP logs for cleaner output
+        pass
+
+class ThreadedHTTPServer(socketserver.ThreadingMixIn, HTTPServer):
+    """Handle requests in separate threads"""
+    pass
+
+def get_pi_ip():
+    """Get Pi's local IP address"""
+    import socket
     try:
-        subprocess.run(['ffmpeg', '-version'], capture_output=True, check=True)
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        logger.error("❌ FFmpeg not found! Install with: sudo apt install ffmpeg")
-        return False
-    
-    # Start streamer
-    streamer = RTSPStreamer()
-    return streamer.start()
+        # Connect to external address to find local IP
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except:
+        return "localhost"
 
 if __name__ == "__main__":
-    success = main()
-    if not success:
-        logger.error("❌ Failed to start RTSP streamer")
-        sys.exit(1)
+    try:
+        # Initialize camera
+        camera = CameraStreamer()
+        
+        # Start HTTP server
+        server = ThreadedHTTPServer(('', HTTP_PORT), StreamingHandler)
+        pi_ip = get_pi_ip()
+        
+        print("🚀 Camera streaming started!")
+        print(f"📡 Stream URL: http://{pi_ip}:{HTTP_PORT}/stream")
+        print(f"🌐 Web view: http://{pi_ip}:{HTTP_PORT}/")
+        print("Press Ctrl+C to stop")
+        
+        server.serve_forever()
+        
+    except KeyboardInterrupt:
+        print("\n🛑 Shutting down...")
+        camera.stop()
+        server.shutdown()
+        print("✅ Stopped successfully")
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        if 'camera' in locals():
+            camera.stop()

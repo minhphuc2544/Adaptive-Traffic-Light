@@ -5,7 +5,7 @@ from ultralytics import YOLO
 import cv2
 
 # --- Config ---
-MQTT_BROKER = '192.168.61.8'
+MQTT_BROKER = '192.168.79.8'
 MQTT_PORT = 1883
 MQTT_TOPIC = 'iot/traffic'
 SEND_INTERVAL = 2
