@@ -5,9 +5,12 @@ Captures video from Pi Camera V2 and streams via MJPEG over HTTP
 
 Setup Instructions:
 1. Enable camera: sudo raspi-config → Interface Options → Camera → Enable
-2. Reboot: sudo reboot
-3. Install dependencies: pip3 install opencv-python
-4. Run: python3 camera.py
+2. Enable legacy camera: sudo raspi-config → Advanced Options → GL Driver → Legacy
+3. Reboot: sudo reboot
+4. Install dependencies: 
+   pip3 install opencv-python picamera2
+   # OR for older Pi OS: pip3 install opencv-python picamera
+5. Run: python3 camera.py
 
 Hardware: Raspberry Pi 3 + Pi Camera V2
 Streaming: MJPEG over HTTP (low latency, Pi 3 compatible)
@@ -19,6 +22,23 @@ import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import socketserver
 from io import BytesIO
+import numpy as np
+
+# Try to import Pi Camera libraries
+try:
+    from picamera2 import Picamera2  # For newer Pi OS (Bullseye+)
+    USE_PICAMERA2 = True
+    print("📷 Using PiCamera2 library")
+except ImportError:
+    try:
+        from picamera import PiCamera  # For older Pi OS
+        USE_PICAMERA2 = False
+        USE_PICAMERA = True
+        print("📷 Using PiCamera library")
+    except ImportError:
+        USE_PICAMERA2 = False
+        USE_PICAMERA = False
+        print("📷 Using OpenCV (USB camera mode)")
 
 # --- Configuration ---
 CAMERA_WIDTH = 640
@@ -29,39 +49,107 @@ JPEG_QUALITY = 80  # Balance between quality and bandwidth
 
 class CameraStreamer:
     def __init__(self):
-        # Initialize Pi Camera via OpenCV
-        # Note: On Pi, cv2.VideoCapture(0) uses Pi camera if enabled
-        self.cap = cv2.VideoCapture(0)
-        
-        if not self.cap.isOpened():
-            raise Exception("❌ Cannot open Pi Camera! Check connection and enable via raspi-config")
-        
-        # Configure camera settings
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, CAMERA_WIDTH)
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, CAMERA_HEIGHT)
-        self.cap.set(cv2.CAP_PROP_FPS, CAMERA_FPS)
-        
-        print(f"✅ Pi Camera initialized: {CAMERA_WIDTH}x{CAMERA_HEIGHT} @ {CAMERA_FPS}fps")
-        
         # Latest frame storage (thread-safe)
         self.frame = None
         self.frame_lock = threading.Lock()
         self.running = True
+        
+        # Initialize camera based on available library
+        if USE_PICAMERA2:
+            self._init_picamera2()
+        elif USE_PICAMERA:
+            self._init_picamera()
+        else:
+            self._init_opencv()
         
         # Start camera capture thread
         self.capture_thread = threading.Thread(target=self._capture_frames)
         self.capture_thread.daemon = True
         self.capture_thread.start()
     
+    def _init_picamera2(self):
+        """Initialize using PiCamera2 (recommended for newer Pi OS)"""
+        self.camera_type = "picamera2"
+        self.picam2 = Picamera2()
+        
+        # Configure camera
+        config = self.picam2.create_video_configuration(
+            main={"size": (CAMERA_WIDTH, CAMERA_HEIGHT), "format": "RGB888"},
+            controls={"FrameRate": CAMERA_FPS}
+        )
+        self.picam2.configure(config)
+        self.picam2.start()
+        
+        print(f"✅ PiCamera2 initialized: {CAMERA_WIDTH}x{CAMERA_HEIGHT} @ {CAMERA_FPS}fps")
+    
+    def _init_picamera(self):
+        """Initialize using legacy PiCamera"""
+        self.camera_type = "picamera"
+        self.picamera = PiCamera()
+        self.picamera.resolution = (CAMERA_WIDTH, CAMERA_HEIGHT)
+        self.picamera.framerate = CAMERA_FPS
+        
+        # Warm up camera
+        time.sleep(2)
+        print(f"✅ PiCamera initialized: {CAMERA_WIDTH}x{CAMERA_HEIGHT} @ {CAMERA_FPS}fps")
+    
+    def _init_opencv(self):
+        """Fallback to OpenCV (for USB cameras or troubleshooting)"""
+        self.camera_type = "opencv"
+        
+        # Try different camera indices
+        for camera_index in [0, 1, 2]:
+            self.cap = cv2.VideoCapture(camera_index)
+            if self.cap.isOpened():
+                break
+        else:
+            raise Exception("❌ Cannot open any camera! Check connection and enable via raspi-config")
+        
+        # Configure camera settings
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, CAMERA_WIDTH)
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, CAMERA_HEIGHT)
+        self.cap.set(cv2.CAP_PROP_FPS, CAMERA_FPS)
+        
+        print(f"✅ OpenCV Camera initialized: {CAMERA_WIDTH}x{CAMERA_HEIGHT} @ {CAMERA_FPS}fps")
+    
     def _capture_frames(self):
         """Continuous frame capture in separate thread"""
         while self.running:
-            ret, frame = self.cap.read()
-            if ret:
-                with self.frame_lock:
-                    self.frame = frame
-            else:
-                print("⚠️ Failed to capture frame")
+            try:
+                if self.camera_type == "picamera2":
+                    # PiCamera2 capture
+                    frame = self.picam2.capture_array()
+                    # Convert RGB to BGR for OpenCV compatibility
+                    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+                    
+                elif self.camera_type == "picamera":
+                    # Legacy PiCamera capture
+                    stream = BytesIO()
+                    self.picamera.capture(stream, format='jpeg')
+                    stream.seek(0)
+                    
+                    # Decode JPEG to numpy array
+                    data = np.frombuffer(stream.getvalue(), dtype=np.uint8)
+                    frame = cv2.imdecode(data, cv2.IMREAD_COLOR)
+                    
+                elif self.camera_type == "opencv":
+                    # OpenCV capture
+                    ret, frame = self.cap.read()
+                    if not ret:
+                        print("⚠️ Failed to capture frame from OpenCV")
+                        time.sleep(0.1)
+                        continue
+                
+                # Store frame thread-safely
+                if frame is not None:
+                    with self.frame_lock:
+                        self.frame = frame
+                else:
+                    print("⚠️ Received empty frame")
+                    time.sleep(0.1)
+                    
+            except Exception as e:
+                print(f"⚠️ Capture error: {e}")
                 time.sleep(0.1)
     
     def get_latest_frame(self):
@@ -71,8 +159,15 @@ class CameraStreamer:
     
     def stop(self):
         """Clean shutdown"""
-        self.running = False
-        self.cap.release()
+        self.running = True
+        
+        if self.camera_type == "picamera2":
+            self.picam2.stop()
+        elif self.camera_type == "picamera":
+            self.picamera.close()
+        elif self.camera_type == "opencv":
+            self.cap.release()
+            
         print("📹 Camera stopped")
 
 class StreamingHandler(BaseHTTPRequestHandler):
