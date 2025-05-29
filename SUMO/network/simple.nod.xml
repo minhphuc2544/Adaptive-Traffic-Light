@@ -1,4 +1,13 @@
-<nodes>
+<!-- <nodes>
     <node id="1" x="0" y="0" type="priority"/>
     <node id="2" x="500" y="0" type="priority"/>
+</nodes> -->
+
+
+<nodes>
+    <node id="TL" x="-100.00" y="100.00" type="traffic_light"/>
+    <node id="LJ" x="-400.00" y="100.00" type="dead_end"/>
+    <node id="RJ" x="200.00" y="100.00" type="dead_end"/>
+    <node id="TJ" x="-100.00" y="400.00" type="dead_end"/>
+    <node id="DJ" x="-100.00" y="-200.00" type="dead_end"/>
 </nodes>

@@ -1,6 +1,16 @@
 <routes>
     <vType id="car" guiShape="passenger" color="1,0,0" accel="5.0" decel="3.0" sigma="1" length="5.0" maxSpeed="80"/>
     <vType id="motorbike" guiShape="motorcycle" color="0,0,1" accel="3.0" decel="2.0" sigma="1" length="2.0" maxSpeed="50"/>
-
-    <route id="route0" edges="edge1"/>
+    <vType id="bicycle" guiShape="bicycle" color="0,1,0" accel="1.5" decel="1.0" maxSpeed="25" length="1.5"/>
+    <vType id="bus" guiShape="bus" color="1,1,0" accel="3.5" decel="2.5" sigma="1" length="12.0" maxSpeed="60"/>
+    <vType id="truck" guiShape="truck" color="1,1,1" accel="3.0" decel="2.5" sigma="1" length="10.0" maxSpeed="60"/>
+    
+    <route id="route_E2TL" edges="E2TL TL2N"/>      <!-- Right turn -->
+    <route id="route_E2TL2W" edges="E2TL TL2W"/>    <!-- Straight -->
+    <route id="route_N2TL" edges="N2TL TL2W"/>      <!-- Right turn -->
+    <route id="route_N2TL2S" edges="N2TL TL2S"/>    <!-- Straight -->
+    <route id="route_S2TL" edges="S2TL TL2E"/>      <!-- Right turn -->
+    <route id="route_S2TL2N" edges="S2TL TL2N"/>    <!-- Straight -->
+    <route id="route_W2TL" edges="W2TL TL2E"/>      <!-- Straight -->
+    <route id="route_W2TL2S" edges="W2TL TL2S"/>    <!-- Right turn -->
 </routes>
