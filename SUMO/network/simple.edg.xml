@@ -2,48 +2,16 @@
     <edge id="edge1" from="1" to="2" numLanes="5" speed="80.0"/>
 </edges> -->
 
-<additionals>
-    <rerouter id="rerouter_0" edges="E2TL">
-        <interval end="1e5">
-        <destProbReroute id="W2TL" probability="0.25"/>
-        <destProbReroute id="N2TL" probability="0.25"/>
-        <destProbReroute id="E2TL" probability="0.25"/>
-        <destProbReroute id="S2TL" probability="0.25"/>
-        </interval>
-    </rerouter>
-    <rerouter id="rerouter_1" edges="N2TL">
-        <interval end="1e5">
-        <destProbReroute id="W2TL" probability="0.25"/>
-        <destProbReroute id="N2TL" probability="0.25"/>
-        <destProbReroute id="E2TL" probability="0.25"/>
-        <destProbReroute id="S2TL" probability="0.25"/>
-        </interval>
-    </rerouter>
-    <rerouter id="rerouter_2" edges="W2TL">
-        <interval end="1e5">
-        <destProbReroute id="W2TL" probability="0.25"/>
-        <destProbReroute id="N2TL" probability="0.25"/>
-        <destProbReroute id="E2TL" probability="0.25"/>
-        <destProbReroute id="S2TL" probability="0.25"/>
-        </interval>
-    </rerouter>
-    <rerouter id="rerouter_3" edges="S2TL">
-        <interval end="1e5">
-        <destProbReroute id="W2TL" probability="0.25"/>
-        <destProbReroute id="N2TL" probability="0.25"/>
-        <destProbReroute id="E2TL" probability="0.25"/>
-        <destProbReroute id="S2TL" probability="0.25"/>
-        </interval>
-    </rerouter>
-</additionals>
 
-<!-- 
-W2TL
-TL2W
-N2TL
-TL2N
-E2TL
-TL2E
-S2TL
-TL2S
- -->
+
+
+<edges>
+    <edge id="E2TL" from="RJ" to="TL" numLanes="2" speed="13.89"/>
+    <edge id="N2TL" from="TJ" to="TL" numLanes="2" speed="13.89"/>
+    <edge id="S2TL" from="DJ" to="TL" numLanes="2" speed="13.89"/>
+    <edge id="W2TL" from="LJ" to="TL" numLanes="2" speed="13.89"/>
+    <edge id="TL2E" from="TL" to="RJ" numLanes="2" speed="13.89"/>
+    <edge id="TL2N" from="TL" to="TJ" numLanes="2" speed="13.89"/>
+    <edge id="TL2S" from="TL" to="DJ" numLanes="2" speed="13.89"/>
+    <edge id="TL2W" from="TL" to="LJ" numLanes="2" speed="13.89"/>
+</edges>

@@ -179,6 +179,7 @@ simple.net.xml
 # AI model files
 weights.npy
 tempCodeRunnerFile.py
+yolov8n.pt
 
 # Picture and video
 *.jpg

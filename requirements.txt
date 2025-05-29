@@ -1,0 +1,5 @@
+traci
+tensorflow
+ultralytics
+paho-mqtt
+opencv-python
