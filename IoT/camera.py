@@ -1,21 +1,4 @@
 #!/usr/bin/env python3
-"""
-Raspberry Pi Camera Streamer
-Captures video from Pi Camera V2 and streams via MJPEG over HTTP
-
-Setup Instructions:
-1. Enable camera: sudo raspi-config → Interface Options → Camera → Enable
-2. Enable legacy camera: sudo raspi-config → Advanced Options → GL Driver → Legacy
-3. Reboot: sudo reboot
-4. Install dependencies: 
-   pip3 install opencv-python picamera2
-   # OR for older Pi OS: pip3 install opencv-python picamera
-5. Run: python3 camera.py
-
-Hardware: Raspberry Pi 3 + Pi Camera V2
-Streaming: MJPEG over HTTP (low latency, Pi 3 compatible)
-"""
-
 import cv2
 import threading
 import time
@@ -28,17 +11,17 @@ import numpy as np
 try:
     from picamera2 import Picamera2  # For newer Pi OS (Bullseye+)
     USE_PICAMERA2 = True
-    print("📷 Using PiCamera2 library")
+    print("Using PiCamera2 library")
 except ImportError:
     try:
         from picamera import PiCamera  # For older Pi OS
         USE_PICAMERA2 = False
         USE_PICAMERA = True
-        print("📷 Using PiCamera library")
+        print("Using PiCamera library")
     except ImportError:
         USE_PICAMERA2 = False
         USE_PICAMERA = False
-        print("📷 Using OpenCV (USB camera mode)")
+        print("Using OpenCV (USB camera mode)")
 
 # --- Configuration ---
 CAMERA_WIDTH = 640
@@ -80,7 +63,7 @@ class CameraStreamer:
         self.picam2.configure(config)
         self.picam2.start()
         
-        print(f"✅ PiCamera2 initialized: {CAMERA_WIDTH}x{CAMERA_HEIGHT} @ {CAMERA_FPS}fps")
+        print(f"PiCamera2 initialized: {CAMERA_WIDTH}x{CAMERA_HEIGHT} @ {CAMERA_FPS}fps")
     
     def _init_picamera(self):
         """Initialize using legacy PiCamera"""
@@ -91,7 +74,7 @@ class CameraStreamer:
         
         # Warm up camera
         time.sleep(2)
-        print(f"✅ PiCamera initialized: {CAMERA_WIDTH}x{CAMERA_HEIGHT} @ {CAMERA_FPS}fps")
+        print(f"PiCamera initialized: {CAMERA_WIDTH}x{CAMERA_HEIGHT} @ {CAMERA_FPS}fps")
     
     def _init_opencv(self):
         """Fallback to OpenCV (for USB cameras or troubleshooting)"""
@@ -103,14 +86,14 @@ class CameraStreamer:
             if self.cap.isOpened():
                 break
         else:
-            raise Exception("❌ Cannot open any camera! Check connection and enable via raspi-config")
+            raise Exception("Cannot open any camera! Check connection and enable via raspi-config")
         
         # Configure camera settings
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, CAMERA_WIDTH)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, CAMERA_HEIGHT)
         self.cap.set(cv2.CAP_PROP_FPS, CAMERA_FPS)
         
-        print(f"✅ OpenCV Camera initialized: {CAMERA_WIDTH}x{CAMERA_HEIGHT} @ {CAMERA_FPS}fps")
+        print(f"OpenCV Camera initialized: {CAMERA_WIDTH}x{CAMERA_HEIGHT} @ {CAMERA_FPS}fps")
     
     def _capture_frames(self):
         """Continuous frame capture in separate thread"""
@@ -136,7 +119,7 @@ class CameraStreamer:
                     # OpenCV capture
                     ret, frame = self.cap.read()
                     if not ret:
-                        print("⚠️ Failed to capture frame from OpenCV")
+                        print("Failed to capture frame from OpenCV")
                         time.sleep(0.1)
                         continue
                 
@@ -145,11 +128,11 @@ class CameraStreamer:
                     with self.frame_lock:
                         self.frame = frame
                 else:
-                    print("⚠️ Received empty frame")
+                    print("Received empty frame")
                     time.sleep(0.1)
                     
             except Exception as e:
-                print(f"⚠️ Capture error: {e}")
+                print(f"Capture error: {e}")
                 time.sleep(0.1)
     
     def get_latest_frame(self):
@@ -168,7 +151,7 @@ class CameraStreamer:
         elif self.camera_type == "opencv":
             self.cap.release()
             
-        print("📹 Camera stopped")
+        print("Camera stopped")
 
 class StreamingHandler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -199,7 +182,7 @@ class StreamingHandler(BaseHTTPRequestHandler):
                     time.sleep(1.0 / CAMERA_FPS)  # Control stream rate
                     
             except Exception as e:
-                print(f"⚠️ Client disconnected: {e}")
+                print(f"Client disconnected: {e}")
         
         elif self.path == '/':
             # Simple web page to view stream
@@ -250,19 +233,19 @@ if __name__ == "__main__":
         server = ThreadedHTTPServer(('', HTTP_PORT), StreamingHandler)
         pi_ip = get_pi_ip()
         
-        print("🚀 Camera streaming started!")
-        print(f"📡 Stream URL: http://{pi_ip}:{HTTP_PORT}/stream")
-        print(f"🌐 Web view: http://{pi_ip}:{HTTP_PORT}/")
+        print("Camera streaming started!")
+        print(f"Stream URL: http://{pi_ip}:{HTTP_PORT}/stream")
+        print(f"Web view: http://{pi_ip}:{HTTP_PORT}/")
         print("Press Ctrl+C to stop")
         
         server.serve_forever()
         
     except KeyboardInterrupt:
-        print("\n🛑 Shutting down...")
+        print("\nShutting down...")
         camera.stop()
         server.shutdown()
-        print("✅ Stopped successfully")
+        print("Stopped successfully")
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"Error: {e}")
         if 'camera' in locals():
             camera.stop()
