@@ -1,3 +1,5 @@
+import os
+import sys
 import time
 import json
 import paho.mqtt.client as mqtt
@@ -7,6 +9,12 @@ import requests
 import numpy as np
 from threading import Thread
 import queue
+
+# Add the root directory to sys.path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+root_dir = os.path.dirname(current_dir)
+sys.path.append(root_dir)
+
 from config import Config
 
 # --- Configuration ---

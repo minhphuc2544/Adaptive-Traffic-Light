@@ -1,8 +1,16 @@
+import os
+import sys
 import time
 import json
 import cv2
 import paho.mqtt.client as mqtt
 from ultralytics import YOLO
+
+# Add the root directory to sys.path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+root_dir = os.path.dirname(current_dir)
+sys.path.append(root_dir)
+
 from config import Config
 
 # --- Config ---

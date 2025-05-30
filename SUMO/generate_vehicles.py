@@ -7,12 +7,19 @@ import paho.mqtt.client as mqtt
 import json
 import numpy as np
 
+# Add the root directory to sys.path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+root_dir = os.path.dirname(current_dir)
+sys.path.append(root_dir)
+
+from config import Config
+
 # --- MQTT Config ---
-MQTT_BROKER = '192.168.154.8'
-MQTT_PORT = 1883
-MQTT_TOPIC_IN = 'iot/traffic'
-MQTT_TOPIC_OUT = 'iot/rand_traffic'
-MQTT_TOPIC_RESPONSE = 'iot/response'
+MQTT_BROKER_IP = Config.MQTT_BROKER_IP
+MQTT_PORT = Config.MQTT_PORT
+MQTT_TOPIC_TRAFFIC = Config.MQTT_TOPIC_TRAFFIC
+MQTT_TOPIC_RANDOM_TRAFFIC = Config.MQTT_TOPIC_RANDOM_TRAFFIC
+MQTT_TOPIC_RESPONSE = Config.MQTT_TOPIC_RESPONSE
 client = mqtt.Client()
 client.on_connect = lambda client, userdata, flags, rc: on_connect(client, userdata, flags, rc)
 client.on_message = lambda client, userdata, msg: on_message(client, userdata, msg)
@@ -51,7 +58,7 @@ phase_duration = 15
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
         print("Connected to MQTT broker!")
-        client.subscribe(MQTT_TOPIC_IN)
+        client.subscribe(MQTT_TOPIC_TRAFFIC)
     else:
         print("Connection failed with code", rc)
 
@@ -204,7 +211,7 @@ def publish_traffic_data():
             "timestamp": time.strftime('%Y-%m-%dT%H:%M:%S', time.gmtime(current_time)),
             "traffic": traffic_data
         }
-        client.publish(MQTT_TOPIC_OUT, json.dumps(message))
+        client.publish(MQTT_TOPIC_RANDOM_TRAFFIC, json.dumps(message))
         print(f"Published SUMO traffic data: {message}")
 
 if __name__ == "__main__":
@@ -218,7 +225,7 @@ if __name__ == "__main__":
 
     # Start MQTT client
     try:
-        client.connect(MQTT_BROKER, MQTT_PORT, 60)
+        client.connect(MQTT_BROKER_IP, MQTT_PORT, 60)
         client.loop_start()
         print("MQTT client started")
     except Exception as e:
