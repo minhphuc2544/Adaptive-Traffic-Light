@@ -4,10 +4,22 @@
 </nodes> -->
 
 
-<nodes>
-    <node id="TL" x="-100.00" y="100.00" type="traffic_light"/>
+<!-- <nodes>
+    <node id="TL2" x="-100.00" y="100.00" type="traffic_light"/>
     <node id="LJ" x="-400.00" y="100.00" type="dead_end"/>
     <node id="RJ" x="200.00" y="100.00" type="dead_end"/>
     <node id="TJ" x="-100.00" y="400.00" type="dead_end"/>
     <node id="DJ" x="-100.00" y="-200.00" type="dead_end"/>
+</nodes> -->
+
+<nodes>
+    <node id="W" x="-500.0" y="0.0"/>
+    <node id="E" x="500.0" y="0.0"/>
+    <node id="N" x="0.0" y="500.0"/>
+    <node id="S" x="0.0" y="-500.0"/>
+    <node id="TL" x="0.0" y="0.0" type="traffic_light"/>
+    <node id="Wout" x="-600.0" y="0.0"/>
+    <node id="Eout" x="600.0" y="0.0"/>
+    <node id="Nout" x="0.0" y="600.0"/>
+    <node id="Sout" x="0.0" y="-600.0"/>    
 </nodes>

@@ -5,13 +5,24 @@
 
 
 
+<!-- <edges>
+    <edge id="E2TL" from="RJ" to="TL2" numLanes="2" speed="13.89"/>
+    <edge id="N2TL" from="TJ" to="TL2" numLanes="2" speed="13.89"/>
+    <edge id="S2TL" from="DJ" to="TL2" numLanes="2" speed="13.89"/>
+    <edge id="W2TL" from="LJ" to="TL2" numLanes="2" speed="13.89"/>
+    <edge id="TL2E" from="TL2" to="RJ" numLanes="2" speed="13.89"/>
+    <edge id="TL2N" from="TL2" to="TJ" numLanes="2" speed="13.89"/>
+    <edge id="TL2S" from="TL2" to="DJ" numLanes="2" speed="13.89"/>
+    <edge id="TL2W" from="TL2" to="LJ" numLanes="2" speed="13.89"/>
+</edges> -->
+
 <edges>
-    <edge id="E2TL" from="RJ" to="TL" numLanes="2" speed="13.89"/>
-    <edge id="N2TL" from="TJ" to="TL" numLanes="2" speed="13.89"/>
-    <edge id="S2TL" from="DJ" to="TL" numLanes="2" speed="13.89"/>
-    <edge id="W2TL" from="LJ" to="TL" numLanes="2" speed="13.89"/>
-    <edge id="TL2E" from="TL" to="RJ" numLanes="2" speed="13.89"/>
-    <edge id="TL2N" from="TL" to="TJ" numLanes="2" speed="13.89"/>
-    <edge id="TL2S" from="TL" to="DJ" numLanes="2" speed="13.89"/>
-    <edge id="TL2W" from="TL" to="LJ" numLanes="2" speed="13.89"/>
+    <edge id="W2TL" from="W" to="TL" numLanes="2" speed="13.89"/>
+    <edge id="E2TL" from="E" to="TL" numLanes="2" speed="13.89"/>
+    <edge id="N2TL" from="N" to="TL" numLanes="2" speed="13.89"/>
+    <edge id="S2TL" from="S" to="TL" numLanes="2" speed="13.89"/>
+    <edge id="TL2W" from="TL" to="Wout" numLanes="2" speed="13.89"/>
+    <edge id="TL2E" from="TL" to="Eout" numLanes="2" speed="13.89"/>
+    <edge id="TL2N" from="TL" to="Nout" numLanes="2" speed="13.89"/>
+    <edge id="TL2S" from="TL" to="Sout" numLanes="2" speed="13.89"/>
 </edges>

@@ -1,4 +1,4 @@
-<additionals>
+<!-- <additionals>
     <rerouter id="rerouter_0" edges="E2TL">
         <interval end="1e5">
             <destProbReroute id="W2TL" probability="0.25"/>
@@ -29,6 +29,40 @@
             <destProbReroute id="N2TL" probability="0.25"/>
             <destProbReroute id="E2TL" probability="0.25"/>
             <destProbReroute id="S2TL" probability="0.25"/>
+        </interval>
+    </rerouter>
+</additionals> -->
+<additionals>
+    <rerouter id="rerouter_0" edges="E2TL">
+        <interval end="1e5">
+        <destProbReroute id="W2TL" probability="0.25"/>
+        <destProbReroute id="N2TL" probability="0.25"/>
+        <destProbReroute id="E2TL" probability="0.25"/>
+        <destProbReroute id="S2TL" probability="0.25"/>
+        </interval>
+    </rerouter>
+    <rerouter id="rerouter_1" edges="N2TL">
+        <interval end="1e5">
+        <destProbReroute id="W2TL" probability="0.25"/>
+        <destProbReroute id="N2TL" probability="0.25"/>
+        <destProbReroute id="E2TL" probability="0.25"/>
+        <destProbReroute id="S2TL" probability="0.25"/>
+        </interval>
+    </rerouter>
+    <rerouter id="rerouter_2" edges="W2TL">
+        <interval end="1e5">
+        <destProbReroute id="W2TL" probability="0.25"/>
+        <destProbReroute id="N2TL" probability="0.25"/>
+        <destProbReroute id="E2TL" probability="0.25"/>
+        <destProbReroute id="S2TL" probability="0.25"/>
+        </interval>
+    </rerouter>
+    <rerouter id="rerouter_3" edges="S2TL">
+        <interval end="1e5">
+        <destProbReroute id="W2TL" probability="0.25"/>
+        <destProbReroute id="N2TL" probability="0.25"/>
+        <destProbReroute id="E2TL" probability="0.25"/>
+        <destProbReroute id="S2TL" probability="0.25"/>
         </interval>
     </rerouter>
 </additionals>
