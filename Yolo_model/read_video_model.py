@@ -3,11 +3,12 @@ import json
 import paho.mqtt.client as mqtt
 from ultralytics import YOLO
 import cv2
+from config import Config
 
 # --- Config ---
-MQTT_BROKER = '192.168.79.8'
-MQTT_PORT = 1883
-MQTT_TOPIC = 'iot/traffic'
+MQTT_BROKER_IP = Config.MQTT_BROKER_IP
+MQTT_PORT = Config.MQTT_PORT
+MQTT_TOPIC_TRAFFIC = Config.MQTT_TOPIC_TRAFFIC
 SEND_INTERVAL = 2
 CONFIDENCE_THRESHOLD = 0.3
 VIDEO_SOURCE = r'Yolo_model/video.mp4'
@@ -17,7 +18,7 @@ DISPLAY_HEIGHT = 600
 
 # --- MQTT ---
 client = mqtt.Client()
-client.connect(MQTT_BROKER, MQTT_PORT, 60)
+client.connect(MQTT_BROKER_IP, MQTT_PORT, 60)
 
 # --- YOLO Model ---
 model = YOLO('yolov8n.pt')
@@ -25,10 +26,10 @@ model = YOLO('yolov8n.pt')
 # --- Video ---
 cap = cv2.VideoCapture(VIDEO_SOURCE)
 if not cap.isOpened():
-    print("❌ Unable to open video!")
+    print("Unable to open video!")
     exit()
 else:
-    print("✅ Open video successfully!")
+    print("Open video successfully!")
 
 # --- Counting memory ---
 counts = {}
@@ -66,7 +67,7 @@ while cap.isOpened():
             "camera_id": CAMERA_ID,
             "vehicles": counts
         }
-        client.publish(MQTT_TOPIC, json.dumps(message))
+        client.publish(MQTT_TOPIC_TRAFFIC, json.dumps(message))
         print("📤 Published:", message)
         last_sent_time = current_time
 

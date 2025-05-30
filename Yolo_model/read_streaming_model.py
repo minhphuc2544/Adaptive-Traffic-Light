@@ -7,12 +7,13 @@ import requests
 import numpy as np
 from threading import Thread
 import queue
+from config import Config
 
 # --- Configuration ---
-PI_CAMERA_URL = 'http://192.168.79.249:8080/stream'
-MQTT_BROKER = '192.168.79.8'
-MQTT_PORT = 1883
-MQTT_TOPIC = 'iot/traffic'
+PI_CAMERA_URL = Config.PI_CAMERA_URL
+MQTT_BROKER_IP = Config.MQTT_BROKER_IP
+MQTT_PORT = Config.MQTT_PORT
+MQTT_TOPIC_TRAFFIC = Config.MQTT_TOPIC_TRAFFIC
 SEND_INTERVAL = 2
 CONFIDENCE_THRESHOLD = 0.3
 CAMERA_ID = "cam_01"
@@ -28,7 +29,7 @@ def on_connect(client, userdata, flags, rc):
 
 client = mqtt.Client()
 client.on_connect = on_connect
-client.connect(MQTT_BROKER, MQTT_PORT, 60)
+client.connect(MQTT_BROKER_IP, MQTT_PORT, 60)
 client.loop_start()
 
 # --- YOLO Model ---
@@ -143,7 +144,7 @@ def send_mqtt_data(counts):
     }
     
     try:
-        client.publish(MQTT_TOPIC, json.dumps(message))
+        client.publish(MQTT_TOPIC_TRAFFIC, json.dumps(message))
         print("Published:", message)
     except Exception as e:
         print(f"MQTT publish error: {e}")
@@ -212,8 +213,8 @@ def main():
 if __name__ == "__main__":
     print("Starting YOLO Traffic Detection from Pi Stream")
     print(f"Stream URL: {PI_CAMERA_URL}")
-    print(f"MQTT Broker: {MQTT_BROKER}:{MQTT_PORT}")
-    print(f"MQTT Topic: {MQTT_TOPIC}")
+    print(f"MQTT Broker: {MQTT_BROKER_IP}:{MQTT_PORT}")
+    print(f"MQTT Topic: {MQTT_TOPIC_TRAFFIC}")
     print("Press ESC to quit\n")
     
     main()
