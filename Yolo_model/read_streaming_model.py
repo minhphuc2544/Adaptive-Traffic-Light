@@ -1,16 +1,3 @@
-#!/usr/bin/env python3
-"""
-YOLO Traffic Detection from Pi Camera Stream
-Receives MJPEG stream from Raspberry Pi and performs vehicle detection
-
-Usage:
-1. Start camera.py on Raspberry Pi first
-2. Update PI_CAMERA_URL with your Pi's IP address
-3. Run: python3 read_streaming_model.py
-
-Dependencies: pip install ultralytics opencv-python paho-mqtt requests
-"""
-
 import time
 import json
 import paho.mqtt.client as mqtt
@@ -20,12 +7,13 @@ import requests
 import numpy as np
 from threading import Thread
 import queue
+from config import Config
 
 # --- Configuration ---
-PI_CAMERA_URL = 'http://192.168.79.249:8080/stream'  # Update with your Pi's IP
-MQTT_BROKER = '192.168.79.8'
-MQTT_PORT = 1883
-MQTT_TOPIC = 'iot/traffic'
+PI_CAMERA_URL = Config.PI_CAMERA_URL
+MQTT_BROKER_IP = Config.MQTT_BROKER_IP
+MQTT_PORT = Config.MQTT_PORT
+MQTT_TOPIC_TRAFFIC = Config.MQTT_TOPIC_TRAFFIC
 SEND_INTERVAL = 2
 CONFIDENCE_THRESHOLD = 0.3
 CAMERA_ID = "cam_01"
@@ -35,19 +23,19 @@ DISPLAY_HEIGHT = 600
 # --- MQTT Client ---
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
-        print("✅ Connected to MQTT broker")
+        print("Connected to MQTT broker")
     else:
-        print(f"❌ MQTT connection failed with code {rc}")
+        print(f"MQTT connection failed with code {rc}")
 
 client = mqtt.Client()
 client.on_connect = on_connect
-client.connect(MQTT_BROKER, MQTT_PORT, 60)
+client.connect(MQTT_BROKER_IP, MQTT_PORT, 60)
 client.loop_start()
 
 # --- YOLO Model ---
-print("🤖 Loading YOLOv8 model...")
+print("Loading YOLOv8 model...")
 model = YOLO('yolov8n.pt')
-print("✅ YOLOv8 model loaded successfully")
+print("YOLOv8 model loaded successfully")
 
 class StreamDecoder:
     """Decode MJPEG stream from Pi camera"""
@@ -66,11 +54,11 @@ class StreamDecoder:
                 # Connect to stream
                 response = requests.get(self.url, stream=True, timeout=10)
                 if response.status_code != 200:
-                    print(f"❌ Stream error: HTTP {response.status_code}")
+                    print(f"Stream error: HTTP {response.status_code}")
                     time.sleep(2)
                     continue
                 
-                print("🔗 Connected to Pi camera stream")
+                print("Connected to Pi camera stream")
                 
                 # Parse MJPEG stream
                 buffer = b''
@@ -107,10 +95,10 @@ class StreamDecoder:
                                     pass
                 
             except requests.exceptions.RequestException as e:
-                print(f"⚠️ Stream connection error: {e}")
+                print(f"Stream connection error: {e}")
                 time.sleep(2)
             except Exception as e:
-                print(f"⚠️ Decode error: {e}")
+                print(f"Decode error: {e}")
                 time.sleep(1)
     
     def get_frame(self):
@@ -156,13 +144,13 @@ def send_mqtt_data(counts):
     }
     
     try:
-        client.publish(MQTT_TOPIC, json.dumps(message))
-        print("📤 Published:", message)
+        client.publish(MQTT_TOPIC_TRAFFIC, json.dumps(message))
+        print("Published:", message)
     except Exception as e:
-        print(f"⚠️ MQTT publish error: {e}")
+        print(f"MQTT publish error: {e}")
 
 def main():
-    print(f"🔍 Connecting to Pi camera stream: {PI_CAMERA_URL}")
+    print(f"Connecting to Pi camera stream: {PI_CAMERA_URL}")
     
     # Initialize stream decoder
     stream_decoder = StreamDecoder(PI_CAMERA_URL)
@@ -205,7 +193,7 @@ def main():
             frame_count += 1
             if current_time - fps_time >= 1.0:
                 fps = frame_count / (current_time - fps_time)
-                print(f"🎥 Processing at {fps:.1f} FPS | Vehicles: {counts}")
+                print(f"Processing at {fps:.1f} FPS | Vehicles: {counts}")
                 frame_count = 0
                 fps_time = current_time
             
@@ -214,19 +202,19 @@ def main():
                 break
                 
     except KeyboardInterrupt:
-        print("\n🛑 Shutting down...")
+        print("\nShutting down...")
     finally:
         stream_decoder.stop()
         cv2.destroyAllWindows()
         client.loop_stop()
         client.disconnect()
-        print("✅ Stopped successfully")
+        print("Stopped successfully")
 
 if __name__ == "__main__":
-    print("🚀 Starting YOLO Traffic Detection from Pi Stream")
-    print(f"📡 Stream URL: {PI_CAMERA_URL}")
-    print(f"📊 MQTT Broker: {MQTT_BROKER}:{MQTT_PORT}")
-    print(f"📝 MQTT Topic: {MQTT_TOPIC}")
+    print("Starting YOLO Traffic Detection from Pi Stream")
+    print(f"Stream URL: {PI_CAMERA_URL}")
+    print(f"MQTT Broker: {MQTT_BROKER_IP}:{MQTT_PORT}")
+    print(f"MQTT Topic: {MQTT_TOPIC_TRAFFIC}")
     print("Press ESC to quit\n")
     
     main()

@@ -3,18 +3,19 @@ import json
 import cv2
 import paho.mqtt.client as mqtt
 from ultralytics import YOLO
+from config import Config
 
 # --- Config ---
-MQTT_BROKER = '192.168.79.8'
-MQTT_PORT = 1883
-MQTT_TOPIC = 'iot/traffic'
+MQTT_BROKER_IP = Config.MQTT_BROKER_IP
+MQTT_PORT = Config.MQTT_PORT
+MQTT_TOPIC_TRAFFIC = Config.MQTT_TOPIC_TRAFFIC
 CONFIDENCE_THRESHOLD = 0.3
 IMAGE_PATH = r'Yolo_model/pic.jpg'
 CAMERA_ID = "cam_01"
 
 # --- MQTT Setup ---
 client = mqtt.Client()
-client.connect(MQTT_BROKER, MQTT_PORT, 60)
+client.connect(MQTT_BROKER_IP, MQTT_PORT, 60)
 
 # --- Load YOLO model ---
 model = YOLO('yolov8n.pt')
@@ -22,10 +23,10 @@ model = YOLO('yolov8n.pt')
 # --- Load and process image ---
 img = cv2.imread(IMAGE_PATH)
 if img is None:
-    print("❌ Không thể đọc ảnh!")
+    print("Không thể đọc ảnh!")
     exit()
 else:
-    print("✅ Ảnh đã được tải thành công.")
+    print("Ảnh đã được tải thành công.")
 
 # --- Run YOLO detection ---
 results = model(img)
@@ -54,10 +55,10 @@ if counts:
         "camera_id": CAMERA_ID,
         "vehicles": counts
     }
-    client.publish(MQTT_TOPIC, json.dumps(message))
+    client.publish(MQTT_TOPIC_TRAFFIC, json.dumps(message))
     print("📤 Published:", message)
 else:
-    print("ℹ️ Không phát hiện phương tiện nào.")
+    print("ℹKhông phát hiện phương tiện nào.")
 
 # --- (Tùy chọn) Hiển thị ảnh annotate ---
 annotated_img = results[0].plot()

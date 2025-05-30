@@ -3,3 +3,4 @@ tensorflow
 ultralytics
 paho-mqtt
 opencv-python
+dotenv
