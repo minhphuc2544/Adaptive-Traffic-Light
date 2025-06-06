@@ -24,8 +24,8 @@ except ImportError:
         print("Using OpenCV (USB camera mode)")
 
 # --- Configuration ---
-CAMERA_WIDTH = 640
-CAMERA_HEIGHT = 480
+CAMERA_WIDTH = 1280
+CAMERA_HEIGHT = 720
 CAMERA_FPS = 15  # Lower FPS for Pi 3 performance
 HTTP_PORT = 8080
 JPEG_QUALITY = 80  # Balance between quality and bandwidth
