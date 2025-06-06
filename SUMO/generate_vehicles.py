@@ -28,7 +28,7 @@ client.on_message = lambda client, userdata, msg: on_message(client, userdata, m
 NUM_VEHICLES_MAX = 10000
 MAIN_EDGE = "W2TL"
 RANDOM_EDGES = ["E2TL", "N2TL", "S2TL"]
-VEHICLE_TYPES = ["car", "motorbike", "bicycle", "bus", "truck"]
+VEHICLE_TYPES = ["car", "motorcycle", "bicycle", "bus", "truck"]
 ROUTES = [
     "W_E", "W_S",
     "E_W", "E_N",
