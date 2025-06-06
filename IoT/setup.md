@@ -1,6 +1,3 @@
-Here is your Bash script turned into a well-formatted **Markdown** setup guide:
-
-````markdown
 # 📷 Raspberry Pi Setup Guide for `camera.py`
 
 This guide helps you set up a Raspberry Pi to run `camera.py`, including camera access, required packages, and dependencies.
@@ -58,8 +55,3 @@ sudo reboot
 ---
 
 **Setup complete!** 🎉 Your Raspberry Pi is now ready to run `camera.py`.
-
-```
-
-Let me know if you'd like this in Vietnamese or as a `README.md` file.
-```
