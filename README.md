@@ -7,6 +7,32 @@
 
 An intelligent traffic management system that uses computer vision and reinforcement learning to optimize traffic light timing based on real-time vehicle detection.
 
+## 🌐 System Architecture
+
+### IoT Reference Model
+![IoT Reference Architecture](figures/iot_reference_model.png)
+
+This diagram shows the core components of our IoT system:
+- **Raspberry Pi** with camera captures and streams video
+- **YOLO Model Server** processes the stream for vehicle detection
+- **Reinforcement Learning Server** makes traffic light decisions
+- **ESP32 Microcontroller** controls physical traffic lights
+- **MQTT Broker** facilitates communication between components
+- **ThingsBoard** for IoT dashboard and monitoring
+
+### Workflow Diagram
+![System Workflow](figures/system_workflow.png)
+
+The end-to-end workflow:
+1. Street cameras capture real-time traffic footage
+2. Video streams are processed by the YOLO model for vehicle detection
+3. Traffic data is analyzed by the Reinforcement Learning model
+4. Optimal traffic light phases are determined
+5. Commands are sent to:
+   - SUMO for simulation updates
+   - ESP32 controllers for physical lights
+6. Traffic signals adapt based on current conditions
+
 ## 📌 Features
 
 - **Real-time Vehicle Detection**: Uses YOLOv8 model to detect and classify vehicles from camera streams
