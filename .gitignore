@@ -186,3 +186,7 @@ yolov8n.pt
 *.png
 *.jpeg
 *.mp4
+
+# Not ignore the figures in README.md
+!iot_reference_model.png
+!system_workflow.png
