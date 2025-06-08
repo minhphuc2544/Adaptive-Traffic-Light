@@ -116,12 +116,7 @@ adaptive-traffic-light/
 
 ### Running the Simulation
 
-1. Start SUMO with the configuration:
-   ```bash
-   sumo-gui -c SUMO/config/simulation.sumocfg
-   ```
-
-2. Run the vehicle generator with RL controller:
+1. Run the vehicle generator with RL controller:
    ```bash
    python SUMO/generate_vehicles.py
    ```
