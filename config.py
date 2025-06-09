@@ -13,3 +13,6 @@ class Config:
 
     # Raspberri Pi Related Env Vars
     PI_CAMERA_URL = os.environ['PI_CAMERA_URL']
+    
+    # 
+    THINGSBOARD_IP = os.environ['THINGSBOARD_IP']
