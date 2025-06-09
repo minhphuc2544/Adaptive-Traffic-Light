@@ -2,11 +2,11 @@
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 
-// Wi-Fi credentials (replace with your network details)
+// Wi-Fi credentials
 const char* ssid = "test";
 const char* password = "12345678";
 
-// MQTT broker details (from .env)
+// MQTT broker details
 const char* mqtt_server = "192.168.179.8";
 const int mqtt_port = 1883;
 const char* mqtt_topic = "iot/response";
@@ -20,9 +20,13 @@ const char* mqtt_topic = "iot/response";
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-// Timing variables
+// Timing and state variables
 unsigned long phase_end_time = 0;
 bool phase_active = false;
+String current_phase = "";
+const unsigned long YELLOW_DURATION = 3000; // 3 seconds for yellow phase
+const unsigned long GREEN_DURATION_MIN = 10000; // 10 seconds minimum for green
+const unsigned long GREEN_DURATION_MAX = 30000; // 30 seconds maximum for green
 
 // Function prototypes
 void setup_wifi();
@@ -61,8 +65,18 @@ void loop() {
   // Check if current phase has ended
   if (phase_active && millis() >= phase_end_time) {
     phase_active = false;
-    default_safe_state();
-    Serial.println("Phase ended, entering safe state (EW red ON)");
+    if (current_phase == "EW_green") {
+      // Transition from green to yellow
+      set_traffic_lights("EW_yellow");
+      phase_end_time = millis() + YELLOW_DURATION;
+      phase_active = true;
+      current_phase = "EW_yellow";
+    } else if (current_phase == "EW_yellow") {
+      // Transition from yellow to red
+      default_safe_state();
+      current_phase = "";
+    }
+    Serial.println("Phase transitioned automatically");
   }
 }
 
@@ -114,26 +128,40 @@ void callback(char* topic, byte* payload, unsigned int length) {
     return;
   }
 
-  // Extract phase and duration
+  // Extract phase
   const char* phase = doc["phase"];
-  float duration = doc["duration"];
-
   if (phase) {
+    String new_phase = String(phase);
     Serial.print("Received phase: ");
-    Serial.print(phase);
-    Serial.print(", duration: ");
-    Serial.print(duration);
-    Serial.println(" seconds");
+    Serial.println(new_phase);
 
-    // Set traffic lights based on phase
-    set_traffic_lights(String(phase));
+    // Set traffic lights based on trigger
+    set_traffic_lights(new_phase);
+    current_phase = new_phase;
 
-    // Set phase duration
-    phase_end_time = millis() + (unsigned long)(duration * 1000);
-    phase_active = true;
+    // Set initial phase duration
+    if (new_phase == "EW_green") {
+      // Random duration between 10-30 seconds for green phase
+      unsigned long green_duration = random(GREEN_DURATION_MIN, GREEN_DURATION_MAX + 1);
+      phase_end_time = millis() + green_duration;
+      phase_active = true;
+      Serial.print("Green phase duration set to: ");
+      Serial.println(green_duration / 1000);
+    } else if (new_phase == "EW_yellow") {
+      phase_end_time = millis() + YELLOW_DURATION;
+      phase_active = true;
+      Serial.println("Yellow phase duration set to 3 seconds");
+    } else {
+      // For NS_green or NS_yellow, default to red immediately
+      default_safe_state();
+      current_phase = "";
+      phase_active = false;
+      Serial.println("Invalid phase, defaulting to red");
+    }
   } else {
-    Serial.println("Invalid phase received");
+    Serial.println("No phase received, defaulting to red");
     default_safe_state();
+    current_phase = "";
   }
 }
 
