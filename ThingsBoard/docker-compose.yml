@@ -1,0 +1,29 @@
+services:
+  tb-postgres:
+    image: postgres:12
+    container_name: tb-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: thingsboard
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - tb-data:/var/lib/postgresql/data/pgdata
+
+  tb:
+    image: thingsboard/tb-postgres
+    container_name: thingsboard
+    restart: always
+    depends_on:
+      - tb-postgres
+    ports:
+      - "9090:9090"  # Changed from 8080 to 9090
+    environment:
+      TB_QUEUE_TYPE: in-memory
+      SPRING_DATASOURCE_URL: jdbc:postgresql://tb-postgres:5432/thingsboard
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+
+volumes:
+  tb-data:
