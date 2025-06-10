@@ -100,14 +100,24 @@ adaptive-traffic-light/
    pip install -r requirements.txt
    ```
 
-3. Set up environment variables in `.env`:
+3. Set up environment variables in `.env` with example values:
    ```ini
-   MQTT_BROKER_IP=your_broker_ip
+   # MQTT Related Env Vars
+   MQTT_BROKER_IP=192.168.141.8
    MQTT_PORT=1883
    MQTT_TOPIC_TRAFFIC=iot/traffic
-   MQTT_TOPIC_RANDOM_TRAFFIC=iot/random_traffic
+   MQTT_TOPIC_RANDOM_TRAFFIC=iot/sumo_traffic
    MQTT_TOPIC_RESPONSE=iot/response
-   PI_CAMERA_URL=http://raspberrypi.local:8080/stream
+
+   # Raspberri Pi Related Env Vars
+   PI_CAMERA_URL=http://192.168.154.249:8080/stream
+
+   # ThingsBoard config
+   THINGSBOARD_IP=192.168.141.43
+   THINGSBOARD_TOKEN_EAST=VGIdxL7vvabXy1MZt8sQ
+   THINGSBOARD_TOKEN_WEST=LicRjJxRfkosKLWQGBzh
+   THINGSBOARD_TOKEN_SOUTH=uw0NoTwMcwMJAIfjrXOL
+   THINGSBOARD_TOKEN_NORTH=q4FfGpO1SCaKPH0YtpSG
    ```
 
 4. For Raspberry Pi setup, follow the [IoT/setup.md](IoT/setup.md) guide.
