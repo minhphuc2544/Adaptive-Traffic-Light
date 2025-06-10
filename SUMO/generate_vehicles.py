@@ -6,6 +6,7 @@ import traci
 import paho.mqtt.client as mqtt
 import json
 import numpy as np
+import requests
 
 # Add the root directory to sys.path
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -20,6 +21,11 @@ MQTT_PORT = Config.MQTT_PORT
 MQTT_TOPIC_TRAFFIC = Config.MQTT_TOPIC_TRAFFIC
 MQTT_TOPIC_RANDOM_TRAFFIC = Config.MQTT_TOPIC_RANDOM_TRAFFIC
 MQTT_TOPIC_RESPONSE = Config.MQTT_TOPIC_RESPONSE
+THINGSBOARD_IP = Config.THINGSBOARD_IP
+THINGSBOARD_TOKEN_EAST = Config.THINGSBOARD_TOKEN_EAST
+THINGSBOARD_TOKEN_WEST = Config.THINGSBOARD_TOKEN_WEST
+THINGSBOARD_TOKEN_SOUTH = Config.THINGSBOARD_TOKEN_SOUTH
+THINGSBOARD_TOKEN_NORTH = Config.THINGSBOARD_TOKEN_NORTH
 client = mqtt.Client()
 client.on_connect = lambda client, userdata, flags, rc: on_connect(client, userdata, flags, rc)
 client.on_message = lambda client, userdata, msg: on_message(client, userdata, msg)
@@ -47,13 +53,24 @@ GAMMA = 0.9
 EPSILON = 0.1
 Q_TABLE = {}
 
+# --- ThingsBoard Config ---
+THINGSBOARD_URL = "http://192.168.141.43:9090/api/v1/{}/telemetry"
+THINGSBOARD_TOKENS = {
+    "E2TL": "VGIdxL7vvabXy1MZt8sQ",  # East
+    "W2TL": "LicRjJxRfkosKLWQGBzh",  # West
+    "S2TL": "uw0NoTwMcwMJAIfjrXOL",  # South
+    "N2TL": "q4FfGpO1SCaKPH0YtpSG"   # North
+}
+SEND_INTERVAL = 5.0  # Seconds between ThingsBoard telemetry sends
+
 # --- Global variables ---
 veh_index = 0
 mqtt_vehicle_queue = []
 current_phase = 0
 phase_end_time = 0
 phase_duration = 15
-sent_random_vehicle_ids = set()  # Theo dõi ID của phương tiện ngẫu nhiên đã gửi
+sent_random_vehicle_ids = set()
+last_sent_time = 0  # Tracks last time telemetry was sent to ThingsBoard
 
 # --- MQTT Callbacks ---
 def on_connect(client, userdata, flags, rc):
@@ -115,38 +132,55 @@ def update_q_table(state, action, reward, next_state):
 def control_traffic_lights():
     global current_phase, phase_end_time, phase_duration
     current_time = traci.simulation.getTime()
+    
     if current_time >= phase_end_time:
+        # Send phase change signal to ESP32 immediately
         if current_phase == 0:
+            # From NS_green to NS_yellow
             current_phase = 1
             phase_duration = YELLOW_TIME
+            send_phase_signal("NS_yellow")
         elif current_phase == 1:
+            # From NS_yellow to EW_red (transition phase)
+            send_phase_signal("EW_red")
+            # Small delay then to EW_green
             current_phase = 2
             state = get_state()
             phase_duration = choose_action(state)
             reward = get_reward()
             next_state = get_state()
             update_q_table(state, phase_duration, reward, next_state)
+            send_phase_signal("EW_green")
         elif current_phase == 2:
+            # From EW_green to EW_yellow
             current_phase = 3
             phase_duration = YELLOW_TIME
+            send_phase_signal("EW_yellow")
         elif current_phase == 3:
+            # From EW_yellow to EW_red then NS_green
+            send_phase_signal("EW_red")
             current_phase = 0
             state = get_state()
             phase_duration = choose_action(state)
             reward = get_reward()
             next_state = get_state()
             update_q_table(state, phase_duration, reward, next_state)
+            send_phase_signal("NS_green")
+        
+        # Update SUMO traffic light
         traci.trafficlight.setPhase(TL_ID, current_phase)
         phase_end_time = current_time + phase_duration
-        phase_name = {0: "NS_green", 1: "NS_yellow", 2: "EW_green", 3: "EW_yellow"}[current_phase]
-        message = {
-            "timestamp": time.strftime('%Y-%m-%dT%H:%M:%S', time.gmtime(current_time)),
-            "traffic_light": TL_ID,
-            "phase": phase_name,
-            "duration": phase_duration
-        }
-        client.publish(MQTT_TOPIC_RESPONSE, json.dumps(message))
-        print(f"Published traffic light decision: {message}")
+
+def send_phase_signal(phase_name):
+    """Send phase change signal to ESP32 via MQTT"""
+    current_time = traci.simulation.getTime()
+    message = {
+        "timestamp": time.strftime('%Y-%m-%dT%H:%M:%S', time.gmtime(current_time)),
+        "traffic_light": TL_ID,
+        "phase": phase_name
+    }
+    client.publish(MQTT_TOPIC_RESPONSE, json.dumps(message))
+    print(f"Published phase change signal: {message}")
 
 # --- Generate vehicles from MQTT ---
 def generate_mqtt_vehicles():
@@ -216,6 +250,39 @@ def publish_traffic_data(new_vehicle_counts):
         client.publish(MQTT_TOPIC_RANDOM_TRAFFIC, json.dumps(message))
         print(f"Published SUMO traffic data for new vehicles: {message}")
 
+# --- Send vehicle counts to ThingsBoard ---
+def send_vehicle_counts_to_thingsboard():
+    global last_sent_time
+    current_time = traci.simulation.getTime()
+    if current_time - last_sent_time < SEND_INTERVAL:
+        return
+    
+    headers = {"Content-Type": "application/json"}
+    edges = [MAIN_EDGE] + RANDOM_EDGES  # Include all edges: W2TL, E2TL, N2TL, S2TL
+    for edge in edges:
+        vehicle_count = len(traci.edge.getLastStepVehicleIDs(edge))
+        token = THINGSBOARD_TOKENS.get(edge)
+        if not token:
+            print(f"No ThingsBoard token for edge {edge}")
+            continue
+        url = THINGSBOARD_URL.format(token)
+        data = {
+            "ts": int(time.time() * 1000),  # Convert to milliseconds
+            "values": {
+                "total_vehicle": vehicle_count
+            }
+        }
+        try:
+            response = requests.post(url, json=data, headers=headers)
+            if response.status_code == 200:
+                print(f"Sent to ThingsBoard for {edge}: {data}")
+            else:
+                print(f"Failed to send to ThingsBoard for {edge}: {response.status_code}")
+        except Exception as e:
+            print(f"Error sending to ThingsBoard for {edge}: {e}")
+    
+    last_sent_time = current_time
+
 if __name__ == "__main__":
     # Check SUMO_HOME
     if 'SUMO_HOME' not in os.environ:
@@ -248,6 +315,7 @@ if __name__ == "__main__":
         generate_mqtt_vehicles()
         generate_random_vehicles()
         control_traffic_lights()
+        send_vehicle_counts_to_thingsboard()  # Check and send vehicle counts
         traci.simulationStep()
         time.sleep(0.1)
         step += 1

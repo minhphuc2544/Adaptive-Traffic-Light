@@ -2,11 +2,11 @@
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 
-// Wi-Fi credentials
+// Wi-Fi credentials (replace with your network details)
 const char* ssid = "test";
 const char* password = "12345678";
 
-// MQTT broker details
+// MQTT broker details (from .env)
 const char* mqtt_server = "192.168.179.8";
 const int mqtt_port = 1883;
 const char* mqtt_topic = "iot/response";
@@ -19,14 +19,6 @@ const char* mqtt_topic = "iot/response";
 // WiFi and MQTT clients
 WiFiClient espClient;
 PubSubClient client(espClient);
-
-// Timing and state variables
-unsigned long phase_end_time = 0;
-bool phase_active = false;
-String current_phase = "";
-const unsigned long YELLOW_DURATION = 3000; // 3 seconds for yellow phase
-const unsigned long GREEN_DURATION_MIN = 10000; // 10 seconds minimum for green
-const unsigned long GREEN_DURATION_MAX = 30000; // 30 seconds maximum for green
 
 // Function prototypes
 void setup_wifi();
@@ -61,23 +53,9 @@ void loop() {
     reconnect();
   }
   client.loop();
-
-  // Check if current phase has ended
-  if (phase_active && millis() >= phase_end_time) {
-    phase_active = false;
-    if (current_phase == "EW_green") {
-      // Transition from green to yellow
-      set_traffic_lights("EW_yellow");
-      phase_end_time = millis() + YELLOW_DURATION;
-      phase_active = true;
-      current_phase = "EW_yellow";
-    } else if (current_phase == "EW_yellow") {
-      // Transition from yellow to red
-      default_safe_state();
-      current_phase = "";
-    }
-    Serial.println("Phase transitioned automatically");
-  }
+  
+  // No timing logic needed - ESP32 responds immediately to MQTT signals
+  delay(100); // Small delay to prevent excessive CPU usage
 }
 
 void setup_wifi() {
@@ -128,57 +106,46 @@ void callback(char* topic, byte* payload, unsigned int length) {
     return;
   }
 
-  // Extract phase
+  // Extract phase (duration is no longer needed)
   const char* phase = doc["phase"];
+
   if (phase) {
-    String new_phase = String(phase);
-    Serial.print("Received phase: ");
-    Serial.println(new_phase);
+    String phaseStr = String(phase);
+    Serial.print("Received phase change signal: ");
+    Serial.println(phaseStr);
 
-    // Set traffic lights based on trigger
-    set_traffic_lights(new_phase);
-    current_phase = new_phase;
-
-    // Set initial phase duration
-    if (new_phase == "EW_green") {
-      // Random duration between 10-30 seconds for green phase
-      unsigned long green_duration = random(GREEN_DURATION_MIN, GREEN_DURATION_MAX + 1);
-      phase_end_time = millis() + green_duration;
-      phase_active = true;
-      Serial.print("Green phase duration set to: ");
-      Serial.println(green_duration / 1000);
-    } else if (new_phase == "EW_yellow") {
-      phase_end_time = millis() + YELLOW_DURATION;
-      phase_active = true;
-      Serial.println("Yellow phase duration set to 3 seconds");
+    // Only process EW phases, ignore NS phases
+    if (phaseStr.startsWith("EW_")) {
+      set_traffic_lights(phaseStr);
     } else {
-      // For NS_green or NS_yellow, default to red immediately
-      default_safe_state();
-      current_phase = "";
-      phase_active = false;
-      Serial.println("Invalid phase, defaulting to red");
+      Serial.println("Ignoring NS phase (not relevant for this ESP32)");
     }
   } else {
-    Serial.println("No phase received, defaulting to red");
+    Serial.println("Invalid phase received");
     default_safe_state();
-    current_phase = "";
   }
 }
 
 void set_traffic_lights(String phase) {
-  // Turn off all LEDs
+  // Turn off all LEDs first
   digitalWrite(EW_RED_PIN, LOW);
   digitalWrite(EW_YELLOW_PIN, LOW);
   digitalWrite(EW_GREEN_PIN, LOW);
 
-  // Set LEDs based on phase
+  // Set LEDs based on EW phase only
   if (phase == "EW_green") {
     digitalWrite(EW_GREEN_PIN, HIGH);
+    Serial.println("EW Traffic Light: GREEN ON");
   } else if (phase == "EW_yellow") {
     digitalWrite(EW_YELLOW_PIN, HIGH);
-  } else {
-    // For NS_green, NS_yellow, or invalid phase, set EW red
+    Serial.println("EW Traffic Light: YELLOW ON");
+  } else if (phase == "EW_red") {
     digitalWrite(EW_RED_PIN, HIGH);
+    Serial.println("EW Traffic Light: RED ON");
+  } else {
+    // For any invalid or unknown EW phase, default to safe state
+    default_safe_state();
+    Serial.println("Unknown EW phase, defaulting to safe state");
   }
 }
 
@@ -187,4 +154,5 @@ void default_safe_state() {
   digitalWrite(EW_RED_PIN, HIGH);
   digitalWrite(EW_YELLOW_PIN, LOW);
   digitalWrite(EW_GREEN_PIN, LOW);
+  Serial.println("EW Traffic Light: SAFE STATE (RED ON)");
 }
