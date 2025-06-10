@@ -58,6 +58,7 @@ adaptive-traffic-light/
 │   │   
 │   └───lights_controller
 │           lights_controller.ino  # Arduino traffic light controller
+│           README.md              # ESP32 setup guide
 │           
 ├───SUMO
 │   │   generate_vehicles.py       # SUMO vehicle generator with RL
@@ -91,6 +92,7 @@ adaptive-traffic-light/
 - SUMO (≥1.15.0)
 - Arduino IDE (for hardware controller)
 - Raspberry Pi (optional for physical deployment)
+- Docker, Docker Compose
 
 ### Setup
 
@@ -129,6 +131,10 @@ adaptive-traffic-light/
 
 ## 🚀 Usage
 
+### Running ThingsBoard
+
+Follow the instruction in [ThingsBoard/README.md](ThingsBoard/README.md)
+
 ### Running the Simulation
 
 1. Run the vehicle generator with RL controller:
@@ -150,8 +156,7 @@ adaptive-traffic-light/
 
 ### Controlling Physical Lights
 
-1. Upload `lights_controller.ino` to your ESP32
-2. The controller will automatically connect to MQTT and respond to phase changes
+Follow the instruction in [IoT/lights_controller/README.md](IoT/lights_controller/README.md)
 
 ## 🤖 Tech Stack
 
