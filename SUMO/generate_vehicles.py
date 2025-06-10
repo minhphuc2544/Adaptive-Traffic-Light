@@ -53,13 +53,13 @@ GAMMA = 0.9
 EPSILON = 0.1
 Q_TABLE = {}
 
-# --- ThingsBoard Config ---
-THINGSBOARD_URL = "http://192.168.141.43:9090/api/v1/{}/telemetry"
+# --- ThingsBoard Config (using environment variables) ---
+THINGSBOARD_URL = f"http://{THINGSBOARD_IP}:9090/api/v1/{{}}/telemetry"
 THINGSBOARD_TOKENS = {
-    "E2TL": "VGIdxL7vvabXy1MZt8sQ",  # East
-    "W2TL": "LicRjJxRfkosKLWQGBzh",  # West
-    "S2TL": "uw0NoTwMcwMJAIfjrXOL",  # South
-    "N2TL": "q4FfGpO1SCaKPH0YtpSG"   # North
+    "E2TL": THINGSBOARD_TOKEN_EAST,   # East
+    "W2TL": THINGSBOARD_TOKEN_WEST,   # West
+    "S2TL": THINGSBOARD_TOKEN_SOUTH,  # South
+    "N2TL": THINGSBOARD_TOKEN_NORTH   # North
 }
 SEND_INTERVAL = 5.0  # Seconds between ThingsBoard telemetry sends
 
