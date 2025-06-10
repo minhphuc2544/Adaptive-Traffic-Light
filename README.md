@@ -72,10 +72,14 @@ adaptive-traffic-light/
 │   └───routes
 │           random_routes.rou.xml  # Vehicle routes
 │           
-└───Yolo_model
-        read_pic_model.py          # Image vehicle detection
-        read_streaming_model.py    # Live stream detection
-        read_video_model.py        # Video file detection
+├───Yolo_model
+│       read_pic_model.py          # Image vehicle detection
+│       read_streaming_model.py    # Live stream detection
+│       read_video_model.py        # Video file detection
+└───ThingsBoard
+        docker-compose.yml         # Docker Compose file for running ThingsBoard
+        README.md                  # ThingsBoard setup guide
+        traffic_monitor.json       # Exported Dashboard
 ```
 
 ## 🛠 Installation
