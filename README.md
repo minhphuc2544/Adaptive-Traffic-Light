@@ -47,13 +47,14 @@ The end-to-end workflow:
 ```
 adaptive-traffic-light/
 │   .gitignore
-│   config.py              # Configuration loader
+│   config.py                      # Configuration loader
 │   README.md
 │   requirements.txt
 │   
 ├───IoT
-│   │   camera.py          # Camera streaming server
-│   │   setup.md           # Raspberry Pi setup guide
+│   ├───rasppi_camera
+│   │       camera.py              # Camera streaming server
+│   │       README.md              # Raspberry Pi setup guide
 │   │   
 │   └───lights_controller
 │           lights_controller.ino  # Arduino traffic light controller
@@ -124,7 +125,7 @@ adaptive-traffic-light/
    THINGSBOARD_TOKEN_NORTH=q4FfGpO1SCaKPH0YtpSG
    ```
 
-4. For Raspberry Pi setup, follow the [IoT/setup.md](IoT/setup.md) guide.
+4. For Raspberry Pi setup, follow the [IoT/rasppi_camera/README.md](IoT/rasppi_camera/README.md) guide.
 
 ## 🚀 Usage
 
