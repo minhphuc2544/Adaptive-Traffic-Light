@@ -146,7 +146,7 @@ Follow the instruction in [ThingsBoard/README.md](ThingsBoard/README.md)
 
 1. Start the camera streamer (on Raspberry Pi):
    ```bash
-   python IoT/camera.py
+   python IoT/rasppi_camera/camera.py
    ```
 
 2. Run vehicle detection on the stream:
@@ -178,9 +178,9 @@ Follow the instruction in [IoT/lights_controller/README.md](IoT/lights_controlle
 ## 🤝 Contributing
 
 1. Fork the project
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+2. Create your feature branch (`git checkout -b feat/AmazingFeature`)
 3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
+4. Push to the branch (`git push origin feat/AmazingFeature`)
 5. Open a Pull Request
 
 ## 📜 License
